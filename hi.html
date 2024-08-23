@@ -68,7 +68,7 @@
         }
 
         function useWebWorker(img) {
-            const worker = new Worker('quantizeWorker.js');
+            const worker = new Worker('worker.js');
             worker.onmessage = function(event) {
                 displayPalette(event.data.colors);
             };
