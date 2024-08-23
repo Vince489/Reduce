@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Color Palette Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        #imageContainer {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+        }
+        #palette {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .colorBox {
+            width: 50px;
+            height: 50px;
+            border: 1px solid #ccc;
+        }
+        #uploadImage {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Color Palette Generator</h1>
+    <input type="file" id="uploadImage" accept="image/*">
+    <div id="imageContainer">
+        <img id="uploadedImage" style="display: none;">
+        <div id="palette"></div>
+    </div>
+
+    <script>
+        document.getElementById('uploadImage').addEventListener('change', handleImageUpload);
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const img = document.getElementById('uploadedImage');
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                img.src = e.target.result;
+                img.onload = () => {
+                    img.style.display = 'block';
+                    // Check if web workers are supported
+                    if (window.Worker) {
+                        useWebWorker(img);
+                    } else {
+                        extractColors(img);
+                    }
+                };
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        function useWebWorker(img) {
+            const worker = new Worker('quantizeWorker.js');
+            worker.onmessage = function(event) {
+                displayPalette(event.data.colors);
+            };
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            worker.postMessage({ imageData, numColors: 256 });
+        }
+
+        function extractColors(img) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const pixels = [];
+            for (let i = 0; i < imageData.data.length; i += 4) {
+                const r = imageData.data[i];
+                const g = imageData.data[i + 1];
+                const b = imageData.data[i + 2];
+                pixels.push([r, g, b]);
+            }
+
+            const colors = quantizeColors(pixels, 256);
+            displayPalette(colors);
+        }
+
+        function quantizeColors(pixels, numColors) {
+            const colorCounts = {};
+            for (const [r, g, b] of pixels) {
+                const key = `${r},${g},${b}`;
+                if (!colorCounts[key]) colorCounts[key] = 0;
+                colorCounts[key]++;
+            }
+
+            const sortedColors = Object.entries(colorCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, numColors)
+                .map(([key]) => key.split(',').map(Number));
+
+            return sortedColors;
+        }
+
+        function displayPalette(colors) {
+            const palette = document.getElementById('palette');
+            palette.innerHTML = '';
+
+            colors.forEach(([r, g, b]) => {
+                const colorBox = document.createElement('div');
+                colorBox.className = 'colorBox';
+                colorBox.style.backgroundColor = `rgb(${r},${g},${b})`;
+                palette.appendChild(colorBox);
+            });
+        }
+    </script>
+</body>
+</html>
