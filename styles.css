@@ -1,0 +1,39 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 50px;
+}
+canvas {
+    border: 1px solid #000;
+    margin-top: 20px;
+}
+#thumbnailsContainer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+.thumbnail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.thumbnail canvas {
+    max-width: 512px;
+    width: 100%;
+    height: auto;
+    display: block;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+}
+.thumbnail button {
+    padding: 5px 10px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
